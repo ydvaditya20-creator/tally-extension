@@ -14,7 +14,7 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://*.github.io/*", "http://127.0.0*", "http://localhost/*"],
+      "matches": ["https://*.github.io/*", "http://127.0.0/*", "http://localhost/*"],
       "js": ["content.js"]
     }
   ]
