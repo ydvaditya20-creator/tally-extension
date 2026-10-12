@@ -102,10 +102,9 @@
         });
 
         // --- 2. LEDGER LIST PULL LOGIC ---
-        // --- 2. LEDGER LIST PULL LOGIC (अपग्रेटेड वर्जन) ---
-// --- 2. LEDGER LIST PULL LOGIC (Tally ERP 9 Fix) ---
+  // --- 2. LEDGER LIST PULL LOGIC (Ashutosh Yadav Company Fix) ---
 document.getElementById('btnPull').addEventListener('click', () => {
-    // Tally ERP 9 के लिए 100% वर्किंग एक्सपोर्ट XML
+    // Tally ERP 9 से 'Ashutosh Yadav' कंपनी के लेजर्स निकालने का सही XML
     const ledgerFetchXML = `<ENVELOPE>
         <HEADER>
             <TALLYREQUEST>Export Data</TALLYREQUEST>
@@ -113,19 +112,25 @@ document.getElementById('btnPull').addEventListener('click', () => {
         <BODY>
             <EXPORTDATA>
                 <REQUESTDESC>
-                    <REPORTNAME>List of Ledgers</REPORTNAME>
                     <STATICVARIABLES>
                         <SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT>
-                        <SVCURRENTCOMPANY>##SVCURRENTCOMPANY</SVCURRENTCOMPANY>
+                        <SVCURRENTCOMPANY>Ashutosh Yadav</SVCURRENTCOMPANY>
                     </STATICVARIABLES>
                 </REQUESTDESC>
-                <REQUESTDATA/>
+                <REQUESTDATA>
+                    <COLLECTION NAME="CustomLedgerColl" ISINITIALIZE="Yes">
+                        <TYPE>Ledger</TYPE>
+                        <FETCH>NAME</FETCH>
+                        <FETCH>PARENT</FETCH>
+                    </COLLECTION>
+                </REQUESTDATA>
             </EXPORTDATA>
         </BODY>
     </ENVELOPE>`;
 
     sendRequestToExtension(ledgerFetchXML);
 });
+
 
 
         // एक्सटेंशन को रिक्वेस्ट भेजने का फंक्शन
