@@ -103,8 +103,9 @@
 
         // --- 2. LEDGER LIST PULL LOGIC ---
   // --- 2. LEDGER LIST PULL LOGIC (Ashutosh Yadav Company Fix) ---
+// --- 2. LEDGER LIST PULL LOGIC (Tally ERP 9 Native Format) ---
 document.getElementById('btnPull').addEventListener('click', () => {
-    // Tally ERP 9 से 'Ashutosh Yadav' कंपनी के लेजर्स निकालने का सही XML
+    // Tally ERP 9 के लिए पूरी तरह से कंपैटिबल एक्सपोर्ट XML
     const ledgerFetchXML = `<ENVELOPE>
         <HEADER>
             <TALLYREQUEST>Export Data</TALLYREQUEST>
@@ -112,18 +113,13 @@ document.getElementById('btnPull').addEventListener('click', () => {
         <BODY>
             <EXPORTDATA>
                 <REQUESTDESC>
+                    <REPORTNAME>List of Ledgers</REPORTNAME>
                     <STATICVARIABLES>
                         <SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT>
                         <SVCURRENTCOMPANY>Ashutosh Yadav</SVCURRENTCOMPANY>
                     </STATICVARIABLES>
                 </REQUESTDESC>
-                <REQUESTDATA>
-                    <COLLECTION NAME="CustomLedgerColl" ISINITIALIZE="Yes">
-                        <TYPE>Ledger</TYPE>
-                        <FETCH>NAME</FETCH>
-                        <FETCH>PARENT</FETCH>
-                    </COLLECTION>
-                </REQUESTDATA>
+                <REQUESTDATA/>
             </EXPORTDATA>
         </BODY>
     </ENVELOPE>`;
