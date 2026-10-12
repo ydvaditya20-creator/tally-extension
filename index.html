@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tally Ledger Viewer</title>
+<style>
+body{font-family:Arial,sans-serif;margin:15px;background:#f3f6f8;color:#263445}
+h2{font-size:22px}
+button{padding:12px 16px;border:0;border-radius:6px;background:#168653;color:white;font-size:15px}
+#status{padding:12px;background:white;border-radius:6px;overflow-wrap:anywhere}
+.wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;background:white;display:none}
+th,td{padding:10px;border-bottom:1px solid #ddd;text-align:left}
+th{background:#34495e;color:white}
+</style>
+</head>
+<body>
+<h2>📊 Tally Ledger Viewer</h2>
+<button id="fetchBtn">Fetch Ledgers</button>
+<p id="status">Tally से कनेक्ट करने के लिए बटन दबाएँ।</p>
+<div class="wrap">
+<table id="ledgerTable">
+<thead><tr><th>क्रम</th><th>Ledger Name</th><th>Under Group</th></tr></thead>
+<tbody id="ledgerBody"></tbody>
+</table>
+</div>
+
+<script>
+const EXTENSION_ID = "ifhbmcefgcalegooiioepehlgpjmmkdb";
+const statusEl = document.getElementById("status");
+const button = document.getElementById("fetchBtn");
+const table = document.getElementById("ledgerTable");
+const tbody = document.getElementById("ledgerBody");
+
+const xml = `<ENVELOPE>
+<HEADER>
+<TALLYREQUEST>Export Data</TALLYREQUEST>
+</HEADER>
+<BODY>
+<EXPORTDATA>
+<REQUESTDESC>
+<STATICVARIABLES>
+<SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT>
+</STATICVARIABLES>
+<REPORTNAME>List of Accounts</REPORTNAME>
+</REQUESTDESC>
+</EXPORTDATA>
+</BODY>
+</ENVELOPE>`;
+
+function showError(message) {
+  statusEl.textContent = "❌ " + message;
+  statusEl.style.color = "#c0392b";
+}
+
+button.addEventListener("click", () => {
+  button.disabled = true;
+  statusEl.textContent = "⏳ Tally से कनेक्ट हो रहा है...";
+  statusEl.style.color = "#34495e";
+  table.style.display = "none";
+  tbody.replaceChildren();
+
+  if (!chrome?.runtime?.sendMessage) {
+    showError("Chrome Extension उपलब्ध नहीं है।");
+    button.disabled = false;
+    return;
+  }
+
+  chrome.runtime.sendMessage(
+    EXTENSION_ID,
+    { tallyXml: xml },
+    response => {
+      button.disabled = false;
+
+      if (chrome.runtime.lastError) {
+        showError(chrome.runtime.lastError.message);
+        return;
+      }
+
+      if (!response || !response.success) {
+        showError(response?.error || "Extension से जवाब नहीं मिला।");
+        return;
+      }
+
+      try {
+        const doc = new DOMParser().parseFromString(
+          response.data, "text/xml"
+        );
+
+        if (doc.querySelector("parsererror")) {
+          throw new Error("Tally ने मान्य XML नहीं भेजा।");
+        }
+
+        const nodes = [...doc.getElementsByTagName("*")]
+          .filter(el => el.localName.toUpperCase() === "LEDGER");
+
+        const seen = new Set();
+        const ledgers = [];
+
+        nodes.forEach(el => {
+          const name = (
+            el.getAttribute("NAME") ||
+            el.getElementsByTagName("NAME")[0]?.textContent ||
+            ""
+          ).trim();
+
+          const parent = (
+            el.getElementsByTagName("PARENT")[0]?.textContent ||
+            "Primary"
+          ).trim();
+
+          const key = name.toLowerCase() + "|" + parent.toLowerCase();
+
+          if (name && !seen.has(key)) {
+            seen.add(key);
+            ledgers.push({name, parent});
+          }
+        });
+
+        if (!ledgers.length) {
+          console.log("Tally XML:", response.data);
+          statusEl.textContent =
+            "⚠️ कनेक्शन मिला, लेकिन लेज़र नहीं मिले। Console में XML जाँचें।";
+          return;
+        }
+
+        ledgers.forEach((ledger, index) => {
+          const row = document.createElement("tr");
+
+          [index + 1, ledger.name, ledger.parent].forEach(value => {
+            const cell = document.createElement("td");
+            cell.textContent = String(value);
+            row.appendChild(cell);
+          });
+
+          tbody.appendChild(row);
+        });
+
+        table.style.display = "table";
+        statusEl.textContent =
+          "✅ कुल " + ledgers.length + " लेज़र मिले।";
+
+      } catch (error) {
+        showError(error.message);
+      }
+    }
+  );
+});
+</script>
+</body>
+</html>
