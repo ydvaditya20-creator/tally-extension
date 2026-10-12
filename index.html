@@ -3,58 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tally ERP 9 Web Controller</title>
+    <title>Tally ERP 9 Educational Controller</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 30px; background-color: #f4f6f9; }
         .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        h2 { color: #008080; } /* Tally ERP 9 Teal Color theme */
+        h2 { color: #008080; }
         label { display: block; margin-top: 10px; font-weight: bold; }
         input { width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
         button { background: #008080; color: white; border: none; padding: 10px 15px; margin-top: 15px; border-radius: 4px; cursor: pointer; font-size: 14px; }
         button:hover { background: #006666; }
         button.secondary { background: #4caf50; }
-        textarea { width: 100%; height: 180px; margin-top: 10px; font-family: monospace; background: #222; color: #fff; padding: 10px; border-radius: 4px; }
+        textarea { width: 100%; height: 250px; margin-top: 10px; font-family: monospace; background: #222; color: #fff; padding: 10px; border-radius: 4px; }
     </style>
 </head>
 <body>
 
-    <h1>Tally ERP 9 Web Connector 🚀</h1>
+    <h1>Tally ERP 9 Web Connector (Educational Mode) 🚀</h1>
 
-    <!-- 1. DATA PUSH TO TALLY ERP 9 -->
+    <!-- 1. DOUBLE ENTRY PUSH (Dr/Cr) -->
     <div class="card">
-        <h2>1. Tally ERP 9 में सेल्स एंट्री डालें</h2>
-        <label>पार्टी का नाम (Ledger Name):</label>
-        <input type="text" id="partyName" value="Cash">
+        <h2>1. डबल एंट्री वाउचर डालें (Dr/Cr Sales)</h2>
+        
+        <label>डेबिट लेज़र (Dr - Customer/Cash):</label>
+        <input type="text" id="drLedger" value="Cash">
+
+        <label>क्रेडिट लेज़र (Cr - Income/Sales):</label>
+        <input type="text" id="crLedger" value="Sales Accounts">
 
         <label>राशि (Amount):</label>
-        <input type="number" id="amount" value="2500">
+        <input type="number" id="amount" value="5000">
 
-        <button id="btnPush">Tally ERP 9 में पुश करें</button>
+        <button id="btnPush">Tally में (Dr/Cr) एंट्री पुश करें</button>
     </div>
 
-    <!-- 2. DATA PULL FROM TALLY ERP 9 -->
+    <!-- 2. DATA PULL FROM TALLY -->
     <div class="card">
-        <h2>2. Tally ERP 9 से लेजर्स निकालें</h2>
-        <p>Tally में बने हुए मास्टर लेजर्स की लिस्ट एक्सपोर्ट करें:</p>
+        <h2>2. Tally से लेजर्स की लिस्ट निकालें</h2>
+        <p>Tally में बने हुए सभी लेजर्स की लिस्ट फेच करने के लिए नीचे क्लिक करें:</p>
         <button id="btnPull" class="secondary">Tally से लेजर्स फेच करें</button>
     </div>
 
     <!-- 3. OUTPUT / RESPONSE -->
     <div class="card">
-        <h2>Tally ERP 9 Response Output</h2>
-        <textarea id="output" readonly placeholder="Tally ERP 9 से आने वाला XML रिस्पॉन्स यहाँ दिखेगा..."></textarea>
+        <h2>Tally Response Output</h2>
+        <textarea id="output" readonly placeholder="Tally से आने वाला रिस्पॉन्स यहाँ दिखेगा..."></textarea>
     </div>
 
     <script>
-        // --- 1. TALLY ERP 9 में डेटा पुश करने का लॉजिक ---
+        // --- 1. DOUBLE ENTRY PUSH LOGIC ---
         document.getElementById('btnPush').addEventListener('click', () => {
-            const party = document.getElementById('partyName').value;
+            const drLedger = document.getElementById('drLedger').value;
+            const crLedger = document.getElementById('crLedger').value;
             const amt = document.getElementById('amount').value;
-            const date = new Date().toISOString().slice(0,10).replace(/-/g,""); // YYYYMMDD Format
-            const randomVoucherNo = "ERP-" + Date.now().toString().slice(-4);
+            
+            // Educational Mode के लिए तारीख 1 अप्रैल (20260401) पर फिक्स की गई है
+            const eduDate = "20260401"; 
+            const voucherNo = "EDUDOUBLE-" + Date.now().toString().slice(-4);
 
-            // Tally ERP 9 Compatible Sales Voucher XML
-            const erp9SalesXML = `<ENVELOPE>
+            // प्रॉपर डबल एंट्री (Dr / Cr) XML फॉर्मेट
+            const doubleEntryXML = `<ENVELOPE>
                 <HEADER>
                     <TALLYREQUEST>Import Data</TALLYREQUEST>
                 </HEADER>
@@ -62,36 +69,28 @@
                     <IMPORTDATA>
                         <REQUESTDESC>
                             <REPORTNAME>Vouchers</REPORTNAME>
-                            <STATICVARIABLES>
-                                <SVCURRENTCOMPANY>##SVCURRENTCOMPANY</SVCURRENTCOMPANY>
-                            </STATICVARIABLES>
                         </REQUESTDESC>
                         <REQUESTDATA>
                             <TALLYMESSAGE xmlns:UDF="TallyUDF">
-                                <VOUCHER VTYPE="Sales" ACTION="Create" OBJVIEW="Accounting Voucher View">
-                                    <DATE>${date}</DATE>
-                                    <EFFECTIVEDATE>${date}</EFFECTIVEDATE>
-                                    <VOUCHERNUMBER>${randomVoucherNo}</VOUCHERNUMBER>
-                                    <PARTYLEDGERNAME>${party}</PARTYLEDGERNAME>
-                                    <PERSISTEDVIEW>Accounting Voucher View</PERSISTEDVIEW>
+                                <VOUCHER VTYPE="Sales" ACTION="Create">
+                                    <DATE>${eduDate}</DATE>
+                                    <VOUCHERNUMBER>${voucherNo}</VOUCHERNUMBER>
+                                    <PARTYLEDGERNAME>${drLedger}</PARTYLEDGERNAME>
                                     
-                                    <!-- Debit Entry (Customer / Cash) -->
+                                    <!-- DEBIT ENTRY (Dr) -->
                                     <ALLLEDGERENTRIES.LIST>
-                                        <LEDGERNAME>${party}</LEDGERNAME>
+                                        <LEDGERNAME>${drLedger}</LEDGERNAME>
                                         <ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE>
-                                        <LEDGERFROMITEM>No</LEDGERFROMITEM>
-                                        <REMOVEZEROENTRIES>No</REMOVEZEROENTRIES>
                                         <AMOUNT>-${amt}</AMOUNT>
                                     </ALLLEDGERENTRIES.LIST>
                                     
-                                    <!-- Credit Entry (Sales Account) -->
+                                    <!-- CREDIT ENTRY (Cr) -->
                                     <ALLLEDGERENTRIES.LIST>
-                                        <LEDGERNAME>Sales Accounts</LEDGERNAME>
+                                        <LEDGERNAME>${crLedger}</LEDGERNAME>
                                         <ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE>
-                                        <LEDGERFROMITEM>No</LEDGERFROMITEM>
-                                        <REMOVEZEROENTRIES>No</REMOVEZEROENTRIES>
                                         <AMOUNT>${amt}</AMOUNT>
                                     </ALLLEDGERENTRIES.LIST>
+                                    
                                 </VOUCHER>
                             </TALLYMESSAGE>
                         </REQUESTDATA>
@@ -99,12 +98,13 @@
                 </BODY>
             </ENVELOPE>`;
 
-            sendRequestToExtension(erp9SalesXML);
+            sendRequestToExtension(doubleEntryXML);
         });
 
-        // --- 2. TALLY ERP 9 से डेटा निकालने का लॉजिक ---
+        // --- 2. LEDGER LIST PULL LOGIC ---
         document.getElementById('btnPull').addEventListener('click', () => {
-            const fetchXML = `<ENVELOPE>
+            // Tally से सभी लेजर्स की लिस्ट निकालने का स्टैंडर्ड XML
+            const ledgerFetchXML = `<ENVELOPE>
                 <HEADER>
                     <TALLYREQUEST>Export Data</TALLYREQUEST>
                 </HEADER>
@@ -119,23 +119,23 @@
                 </BODY>
             </ENVELOPE>`;
 
-            sendRequestToExtension(fetchXML);
+            sendRequestToExtension(ledgerFetchXML);
         });
 
-        // एक्सटेंशन को इवेंट भेजने का कॉमन फंक्शन
+        // एक्सटेंशन को रिक्वेस्ट भेजने का फंक्शन
         function sendRequestToExtension(xml) {
-            document.getElementById('output').value = "Tally ERP 9 से कनेक्ट हो रहा है...";
+            document.getElementById('output').value = "Tally ERP 9 से संपर्क किया जा रहा है...";
             const event = new CustomEvent("SendToTallyEvent", { detail: { xml: xml } });
             window.dispatchEvent(event);
         }
 
-        // एक्सटेंशन से आने वाले रिस्पॉन्स को सुनना
+        // एक्सटेंशन से रिस्पॉन्स रिसीव करना
         window.addEventListener("TallyResponseEvent", function(event) {
             const response = event.detail;
             if (response.success) {
                 document.getElementById('output').value = response.data;
             } else {
-                document.getElementById('output').value = "Error: " + response.error + "\n\nसुनिश्चित करें कि Tally ERP 9 चालू है, उसमें कंपनी ओपन है और उसका पोर्ट F12 Advanced Configuration में 9000 पर सेट है।";
+                document.getElementById('output').value = "Error: " + response.error + "\n\nजांचें कि Tally ERP 9 चालू है और पोर्ट 9000 एक्टिव है।";
             }
         });
     </script>
