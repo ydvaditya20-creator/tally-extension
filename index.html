@@ -102,28 +102,35 @@
         });
 
         // --- 2. LEDGER LIST PULL LOGIC (Memory Access Violation Fix) ---
-document.getElementById('btnPull').addEventListener('click', () => {
-    // Tally ERP 9 के लिए मेमोरी सुरक्षित कलेक्शन एक्सपोर्ट XML
-    const ledgerFetchXML = `<ENVELOPE>
-        <HEADER>
-            <TALLYREQUEST>Export Data</TALLYREQUEST>
-        </HEADER>
-        <BODY>
-            <EXPORTDATA>
-                <REQUESTDESC>
-                    <REPORTNAME>List of Ledgers</REPORTNAME>
-                    <STATICVARIABLES>
-                        <SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT>
-                        <SVCURRENTCOMPANY>Ashutosh Yadav</SVCURRENTCOMPANY>
-                    </STATICVARIABLES>
-                </REQUESTDESC>
-                <REQUESTDATA/>
-            </EXPORTDATA>
-        </BODY>
-    </ENVELOPE>`;
 
-    sendRequestToExtension(ledgerFetchXML);
+// --- 2. LEDGER LIST PULL LOGIC (TALLY ERP 9) ---
+document.getElementById('btnPull').addEventListener('click', async () => {
+    const ledgerFetchXML = `
+<ENVELOPE>
+  <HEADER>
+    <TALLYREQUEST>Export Data</TALLYREQUEST>
+  </HEADER>
+  <BODY>
+    <EXPORTDATA>
+      <REQUESTDESC>
+        <REPORTNAME>Ledger List</REPORTNAME>
+        <STATICVARIABLES>
+          <SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT>
+        </STATICVARIABLES>
+      </REQUESTDESC>
+    </EXPORTDATA>
+  </BODY>
+</ENVELOPE>`;
+
+    try {
+        await sendRequestToExtension(ledgerFetchXML);
+    } catch (error) {
+        console.error("Ledger Fetch Error:", error);
+        alert("Tally ERP 9 से Ledger List नहीं मिली। Tally चालू है या नहीं और Extension Connection जाँचें।");
+    }
 });
+
+
 
 
 
