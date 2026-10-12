@@ -103,8 +103,9 @@
 
         // --- 2. LEDGER LIST PULL LOGIC ---
         // --- 2. LEDGER LIST PULL LOGIC (अपग्रेटेड वर्जन) ---
+// --- 2. LEDGER LIST PULL LOGIC (Tally ERP 9 Fix) ---
 document.getElementById('btnPull').addEventListener('click', () => {
-    // Tally से सभी लेजर्स का नाम और उनका ग्रुप निकालने का 100% वर्किंग XML
+    // Tally ERP 9 के लिए 100% वर्किंग एक्सपोर्ट XML
     const ledgerFetchXML = `<ENVELOPE>
         <HEADER>
             <TALLYREQUEST>Export Data</TALLYREQUEST>
@@ -112,24 +113,20 @@ document.getElementById('btnPull').addEventListener('click', () => {
         <BODY>
             <EXPORTDATA>
                 <REQUESTDESC>
-                    <REPORTNAME>All Masters</REPORTNAME>
+                    <REPORTNAME>List of Ledgers</REPORTNAME>
                     <STATICVARIABLES>
                         <SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT>
+                        <SVCURRENTCOMPANY>##SVCURRENTCOMPANY</SVCURRENTCOMPANY>
                     </STATICVARIABLES>
                 </REQUESTDESC>
-                <REQUESTDATA>
-                    <COLLECTION NAME="Ledger" ISINITIALIZE="Yes">
-                        <TYPE>Ledger</TYPE>
-                        <FETCH>NAME</FETCH>
-                        <FETCH>PARENT</FETCH>
-                    </COLLECTION>
-                </REQUESTDATA>
+                <REQUESTDATA/>
             </EXPORTDATA>
         </BODY>
     </ENVELOPE>`;
 
     sendRequestToExtension(ledgerFetchXML);
 });
+
 
         // एक्सटेंशन को रिक्वेस्ट भेजने का फंक्शन
         function sendRequestToExtension(xml) {
