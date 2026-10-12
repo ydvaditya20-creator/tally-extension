@@ -101,35 +101,30 @@
             sendRequestToExtension(doubleEntryXML);
         });
 
-        // --- 2. LEDGER LIST PULL LOGIC ---
-  // --- 2. LEDGER LIST PULL LOGIC (Ashutosh Yadav Company Fix) ---
-// --- 2. LEDGER LIST PULL LOGIC (Tally ERP 9 Native Format) ---
-// --- 2. LEDGER LIST PULL LOGIC (Official Documentation Format) ---
+        // --- 2. LEDGER LIST PULL LOGIC (Memory Access Violation Fix) ---
 document.getElementById('btnPull').addEventListener('click', () => {
-    // आपके द्वारा दिए गए डॉक्यूमेंटेशन के आधार पर बनाया गया 100% सही XML
+    // Tally ERP 9 के लिए मेमोरी सुरक्षित कलेक्शन एक्सपोर्ट XML
     const ledgerFetchXML = `<ENVELOPE>
         <HEADER>
-            <VERSION>1</VERSION>
-            <TALLYREQUEST>EXPORT</TALLYREQUEST>
-            <TYPE>OBJECT</TYPE>
-            <SUBTYPE>Ledger</SUBTYPE>
+            <TALLYREQUEST>Export Data</TALLYREQUEST>
         </HEADER>
         <BODY>
-            <DESC>
-                <STATICVARIABLES>
-                    <SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT>
-                    <SVCURRENTCOMPANY>Ashutosh Yadav</SVCURRENTCOMPANY>
-                </STATICVARIABLES>
-                <FETCHLIST>
-                    <FETCH>Name</FETCH>
-                    <FETCH>Parent</FETCH>
-                </FETCHLIST>
-            </DESC>
+            <EXPORTDATA>
+                <REQUESTDESC>
+                    <REPORTNAME>List of Ledgers</REPORTNAME>
+                    <STATICVARIABLES>
+                        <SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT>
+                        <SVCURRENTCOMPANY>Ashutosh Yadav</SVCURRENTCOMPANY>
+                    </STATICVARIABLES>
+                </REQUESTDESC>
+                <REQUESTDATA/>
+            </EXPORTDATA>
         </BODY>
     </ENVELOPE>`;
 
     sendRequestToExtension(ledgerFetchXML);
 });
+
 
 
 
