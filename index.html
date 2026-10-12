@@ -1,152 +1,143 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Tally Ledger Viewer</title>
-<style>
-body{font-family:Arial,sans-serif;margin:15px;background:#f3f6f8;color:#263445}
-h2{font-size:22px}
-button{padding:12px 16px;border:0;border-radius:6px;background:#168653;color:white;font-size:15px}
-#status{padding:12px;background:white;border-radius:6px;overflow-wrap:anywhere}
-.wrap{overflow-x:auto}
-table{width:100%;border-collapse:collapse;background:white;display:none}
-th,td{padding:10px;border-bottom:1px solid #ddd;text-align:left}
-th{background:#34495e;color:white}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tally ERP 9 Web Controller</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 30px; background-color: #f4f6f9; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        h2 { color: #008080; } /* Tally ERP 9 Teal Color theme */
+        label { display: block; margin-top: 10px; font-weight: bold; }
+        input { width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        button { background: #008080; color: white; border: none; padding: 10px 15px; margin-top: 15px; border-radius: 4px; cursor: pointer; font-size: 14px; }
+        button:hover { background: #006666; }
+        button.secondary { background: #4caf50; }
+        textarea { width: 100%; height: 180px; margin-top: 10px; font-family: monospace; background: #222; color: #fff; padding: 10px; border-radius: 4px; }
+    </style>
 </head>
 <body>
-<h2>📊 Tally Ledger Viewer</h2>
-<button id="fetchBtn">Fetch Ledgers</button>
-<p id="status">Tally से कनेक्ट करने के लिए बटन दबाएँ।</p>
-<div class="wrap">
-<table id="ledgerTable">
-<thead><tr><th>क्रम</th><th>Ledger Name</th><th>Under Group</th></tr></thead>
-<tbody id="ledgerBody"></tbody>
-</table>
-</div>
 
-<script>
-const EXTENSION_ID = "ifhbmcefgcalegooiioepehlgpjmmkdb";
-const statusEl = document.getElementById("status");
-const button = document.getElementById("fetchBtn");
-const table = document.getElementById("ledgerTable");
-const tbody = document.getElementById("ledgerBody");
+    <h1>Tally ERP 9 Web Connector 🚀</h1>
 
-const xml = `<ENVELOPE>
-<HEADER>
-<TALLYREQUEST>Export Data</TALLYREQUEST>
-</HEADER>
-<BODY>
-<EXPORTDATA>
-<REQUESTDESC>
-<STATICVARIABLES>
-<SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT>
-</STATICVARIABLES>
-<REPORTNAME>List of Accounts</REPORTNAME>
-</REQUESTDESC>
-</EXPORTDATA>
-</BODY>
-</ENVELOPE>`;
+    <!-- 1. DATA PUSH TO TALLY ERP 9 -->
+    <div class="card">
+        <h2>1. Tally ERP 9 में सेल्स एंट्री डालें</h2>
+        <label>पार्टी का नाम (Ledger Name):</label>
+        <input type="text" id="partyName" value="Cash">
 
-function showError(message) {
-  statusEl.textContent = "❌ " + message;
-  statusEl.style.color = "#c0392b";
-}
+        <label>राशि (Amount):</label>
+        <input type="number" id="amount" value="2500">
 
-button.addEventListener("click", () => {
-  button.disabled = true;
-  statusEl.textContent = "⏳ Tally से कनेक्ट हो रहा है...";
-  statusEl.style.color = "#34495e";
-  table.style.display = "none";
-  tbody.replaceChildren();
+        <button id="btnPush">Tally ERP 9 में पुश करें</button>
+    </div>
 
-  if (!chrome?.runtime?.sendMessage) {
-    showError("Chrome Extension उपलब्ध नहीं है।");
-    button.disabled = false;
-    return;
-  }
+    <!-- 2. DATA PULL FROM TALLY ERP 9 -->
+    <div class="card">
+        <h2>2. Tally ERP 9 से लेजर्स निकालें</h2>
+        <p>Tally में बने हुए मास्टर लेजर्स की लिस्ट एक्सपोर्ट करें:</p>
+        <button id="btnPull" class="secondary">Tally से लेजर्स फेच करें</button>
+    </div>
 
-  chrome.runtime.sendMessage(
-    EXTENSION_ID,
-    { tallyXml: xml },
-    response => {
-      button.disabled = false;
+    <!-- 3. OUTPUT / RESPONSE -->
+    <div class="card">
+        <h2>Tally ERP 9 Response Output</h2>
+        <textarea id="output" readonly placeholder="Tally ERP 9 से आने वाला XML रिस्पॉन्स यहाँ दिखेगा..."></textarea>
+    </div>
 
-      if (chrome.runtime.lastError) {
-        showError(chrome.runtime.lastError.message);
-        return;
-      }
+    <script>
+        // --- 1. TALLY ERP 9 में डेटा पुश करने का लॉजिक ---
+        document.getElementById('btnPush').addEventListener('click', () => {
+            const party = document.getElementById('partyName').value;
+            const amt = document.getElementById('amount').value;
+            const date = new Date().toISOString().slice(0,10).replace(/-/g,""); // YYYYMMDD Format
+            const randomVoucherNo = "ERP-" + Date.now().toString().slice(-4);
 
-      if (!response || !response.success) {
-        showError(response?.error || "Extension से जवाब नहीं मिला।");
-        return;
-      }
+            // Tally ERP 9 Compatible Sales Voucher XML
+            const erp9SalesXML = `<ENVELOPE>
+                <HEADER>
+                    <TALLYREQUEST>Import Data</TALLYREQUEST>
+                </HEADER>
+                <BODY>
+                    <IMPORTDATA>
+                        <REQUESTDESC>
+                            <REPORTNAME>Vouchers</REPORTNAME>
+                            <STATICVARIABLES>
+                                <SVCURRENTCOMPANY>##SVCURRENTCOMPANY</SVCURRENTCOMPANY>
+                            </STATICVARIABLES>
+                        </REQUESTDESC>
+                        <REQUESTDATA>
+                            <TALLYMESSAGE xmlns:UDF="TallyUDF">
+                                <VOUCHER VTYPE="Sales" ACTION="Create" OBJVIEW="Accounting Voucher View">
+                                    <DATE>${date}</DATE>
+                                    <EFFECTIVEDATE>${date}</EFFECTIVEDATE>
+                                    <VOUCHERNUMBER>${randomVoucherNo}</VOUCHERNUMBER>
+                                    <PARTYLEDGERNAME>${party}</PARTYLEDGERNAME>
+                                    <PERSISTEDVIEW>Accounting Voucher View</PERSISTEDVIEW>
+                                    
+                                    <!-- Debit Entry (Customer / Cash) -->
+                                    <ALLLEDGERENTRIES.LIST>
+                                        <LEDGERNAME>${party}</LEDGERNAME>
+                                        <ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE>
+                                        <LEDGERFROMITEM>No</LEDGERFROMITEM>
+                                        <REMOVEZEROENTRIES>No</REMOVEZEROENTRIES>
+                                        <AMOUNT>-${amt}</AMOUNT>
+                                    </ALLLEDGERENTRIES.LIST>
+                                    
+                                    <!-- Credit Entry (Sales Account) -->
+                                    <ALLLEDGERENTRIES.LIST>
+                                        <LEDGERNAME>Sales Accounts</LEDGERNAME>
+                                        <ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE>
+                                        <LEDGERFROMITEM>No</LEDGERFROMITEM>
+                                        <REMOVEZEROENTRIES>No</REMOVEZEROENTRIES>
+                                        <AMOUNT>${amt}</AMOUNT>
+                                    </ALLLEDGERENTRIES.LIST>
+                                </VOUCHER>
+                            </TALLYMESSAGE>
+                        </REQUESTDATA>
+                    </IMPORTDATA>
+                </BODY>
+            </ENVELOPE>`;
 
-      try {
-        const doc = new DOMParser().parseFromString(
-          response.data, "text/xml"
-        );
-
-        if (doc.querySelector("parsererror")) {
-          throw new Error("Tally ने मान्य XML नहीं भेजा।");
-        }
-
-        const nodes = [...doc.getElementsByTagName("*")]
-          .filter(el => el.localName.toUpperCase() === "LEDGER");
-
-        const seen = new Set();
-        const ledgers = [];
-
-        nodes.forEach(el => {
-          const name = (
-            el.getAttribute("NAME") ||
-            el.getElementsByTagName("NAME")[0]?.textContent ||
-            ""
-          ).trim();
-
-          const parent = (
-            el.getElementsByTagName("PARENT")[0]?.textContent ||
-            "Primary"
-          ).trim();
-
-          const key = name.toLowerCase() + "|" + parent.toLowerCase();
-
-          if (name && !seen.has(key)) {
-            seen.add(key);
-            ledgers.push({name, parent});
-          }
+            sendRequestToExtension(erp9SalesXML);
         });
 
-        if (!ledgers.length) {
-          console.log("Tally XML:", response.data);
-          statusEl.textContent =
-            "⚠️ कनेक्शन मिला, लेकिन लेज़र नहीं मिले। Console में XML जाँचें।";
-          return;
-        }
+        // --- 2. TALLY ERP 9 से डेटा निकालने का लॉजिक ---
+        document.getElementById('btnPull').addEventListener('click', () => {
+            const fetchXML = `<ENVELOPE>
+                <HEADER>
+                    <TALLYREQUEST>Export Data</TALLYREQUEST>
+                </HEADER>
+                <BODY>
+                    <EXPORTDATA>
+                        <REQUESTDESC>
+                            <REPORTNAME>List of Ledgers</REPORTNAME>
+                            <SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT>
+                        </REQUESTDESC>
+                        <REQUESTDATA/>
+                    </EXPORTDATA>
+                </BODY>
+            </ENVELOPE>`;
 
-        ledgers.forEach((ledger, index) => {
-          const row = document.createElement("tr");
-
-          [index + 1, ledger.name, ledger.parent].forEach(value => {
-            const cell = document.createElement("td");
-            cell.textContent = String(value);
-            row.appendChild(cell);
-          });
-
-          tbody.appendChild(row);
+            sendRequestToExtension(fetchXML);
         });
 
-        table.style.display = "table";
-        statusEl.textContent =
-          "✅ कुल " + ledgers.length + " लेज़र मिले।";
+        // एक्सटेंशन को इवेंट भेजने का कॉमन फंक्शन
+        function sendRequestToExtension(xml) {
+            document.getElementById('output').value = "Tally ERP 9 से कनेक्ट हो रहा है...";
+            const event = new CustomEvent("SendToTallyEvent", { detail: { xml: xml } });
+            window.dispatchEvent(event);
+        }
 
-      } catch (error) {
-        showError(error.message);
-      }
-    }
-  );
-});
-</script>
+        // एक्सटेंशन से आने वाले रिस्पॉन्स को सुनना
+        window.addEventListener("TallyResponseEvent", function(event) {
+            const response = event.detail;
+            if (response.success) {
+                document.getElementById('output').value = response.data;
+            } else {
+                document.getElementById('output').value = "Error: " + response.error + "\n\nसुनिश्चित करें कि Tally ERP 9 चालू है, उसमें कंपनी ओपन है और उसका पोर्ट F12 Advanced Configuration में 9000 पर सेट है।";
+            }
+        });
+    </script>
 </body>
 </html>
